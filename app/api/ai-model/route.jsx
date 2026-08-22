@@ -29,7 +29,7 @@ Output in this format:
     });
 
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant", // fast & stable
+      model: "openai/gpt-oss-20b", // verified active model on Groq API
       messages: [{ role: "user", content: FINAL_PROMPT }],
     });
 

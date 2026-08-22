@@ -115,8 +115,8 @@ This project was developed as part of an effort to **bridge AI technology and re
 
 ### 🧑‍💻 Developer
 
-**Author:** *RUDRESH M*  
-📫 Contact: [rudratiptur@gmail.com]  
+**Author:** *Nischith Gowda R *  
+📫 Contact: [nischitgowdar71@gmail.com]  
 
 ---
 

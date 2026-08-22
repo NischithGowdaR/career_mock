@@ -1,35 +1,19 @@
 "use client";
-
-import Image from "next/image";
+import Ai3DBackground from "@/components/Ai3DBackground";
 import { RegisterForm } from "../../components/register-form";
 
 export default function RegisterPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Image
-            src="/logo.png"
-            alt="logo"
-            width={200}
-            height={100}
-            className="w-[140px]"
-          />
-        </div>
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#080b12] selection:bg-yellow-500/30">
+      {/* 3D Animated AI Voice & Mesh Background Canvas */}
+      <Ai3DBackground />
 
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <RegisterForm />
-          </div>
-        </div>
-      </div>
+      {/* Subtle Backdrop Blur & Overlay */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] pointer-events-none z-[1]" />
 
-      <div className="relative hidden bg-muted lg:block">
-        <img
-          src="/ai.jpg"
-          alt="Image"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+      {/* Centered Glassmorphism Register Card */}
+      <div className="relative z-10 w-full max-w-md px-6 py-10 my-8">
+        <RegisterForm />
       </div>
     </div>
   );

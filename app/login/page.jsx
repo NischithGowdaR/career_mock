@@ -1,47 +1,21 @@
 "use client";
-import Image from "next/image";
+import Ai3DBackground from "@/components/Ai3DBackground";
 import { LoginForm } from "../../components/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Left section with login form */}
-      <div className="flex flex-col gap-6 p-8 md:p-12 lg:p-16 bg-white dark:bg-gray-900">
-        {/* Logo and title */}
-        <div className="flex items-center gap-3 mb-6">
-          <Image
-            src="/fav.svg"
-            alt="Career Mock Logo"
-            width={60}
-            height={60}
-            className="w-14 h-14"
-          />
-          <h1 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
-            Career Mock
-          </h1>
-        </div>
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#080b12] selection:bg-yellow-500/30">
+      {/* 3D Animated AI Voice & Mesh Background Canvas */}
+      <Ai3DBackground />
 
-        {/* Login form centered */}
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-center text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-              Welcome Back
-            </h2>
-            <LoginForm />
-          </div>
-        </div>
-      </div>
+      {/* Subtle Backdrop Blur & Overlay */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] pointer-events-none z-[1]" />
 
-      {/* Right section with video */}
-      <div className="relative hidden lg:block overflow-hidden">
-        <video
-          src="/greet-vid.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+      {/* Centered Glassmorphism Login Card */}
+      <div className="relative z-10 w-full max-w-md px-6 py-10 my-8">
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] p-8 border border-white/40 dark:border-gray-700/50">
+          <LoginForm />
+        </div>
       </div>
     </div>
   );
