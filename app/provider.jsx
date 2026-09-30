@@ -22,40 +22,64 @@ function Provider({ children }) {
     }
 
     const currentUser = authData.user;
+    const cleanEmail = currentUser.email?.toLowerCase();
+    if (!cleanEmail) return;
+
     try {
       const { data: Users, error } = await supabase
         .from("users")
         .select("*")
-        .eq("email", currentUser.email);
+        .eq("email", cleanEmail)
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching user:", error.message);
         return;
       }
 
-      if (!Users || Users.length === 0) {
+      if (!Users) {
+        const userRole = currentUser.user_metadata?.role || (typeof window !== "undefined" ? localStorage.getItem("pending_role") : null) || "candidate";
         const { data: newUser, error: insertError } = await supabase
           .from("users")
           .insert([
             {
-              name: currentUser.user_metadata?.name || "New User",
-              email: currentUser.email,
-              picture: currentUser.user_metadata?.picture || "",
-              credits: 3, // ✅ give default credits
+              name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || cleanEmail.split("@")[0],
+              email: cleanEmail,
+              picture: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+              credits: 3,
+              role: userRole,
+              banned: false,
             },
           ])
-          .select();
+          .select()
+          .maybeSingle();
 
         if (insertError) {
-          console.error("Error creating user:", insertError.message);
+          if (insertError.code === '23505') {
+            const { data: reFetched } = await supabase
+              .from("users")
+              .select("*")
+              .eq("email", cleanEmail)
+              .maybeSingle();
+            setUser(reFetched || null);
+          } else {
+            console.error("Error creating user:", insertError.message);
+          }
           return;
         }
 
-        setUser(newUser?.[0] || null);
-        console.log("✅ User created:", newUser?.[0]);
+        setUser(newUser || null);
+        console.log("✅ User created:", newUser);
       } else {
-        setUser(Users[0]);
-        console.log("✅ Existing user:", Users[0]);
+        if (currentUser.user_metadata?.role && currentUser.user_metadata.role !== Users.role) {
+          await supabase
+            .from("users")
+            .update({ role: currentUser.user_metadata.role })
+            .eq("email", cleanEmail);
+          Users.role = currentUser.user_metadata.role;
+        }
+        setUser(Users);
+        console.log("✅ Existing user:", Users);
       }
     } catch (err) {
       console.error("Unexpected error:", err);

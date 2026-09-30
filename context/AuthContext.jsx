@@ -48,8 +48,9 @@ export const AuthContextProvider = ({ children }) => {
   // 🔹 SIGN IN
   const signInUser = async (email, password) => {
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase(),
+        email: cleanEmail,
         password,
       });
 
@@ -57,15 +58,58 @@ export const AuthContextProvider = ({ children }) => {
         return { success: false, error: error.message };
       }
 
-      const { data: userData, error: profileError } = await supabase
+      let { data: userData, error: profileError } = await supabase
         .from("users")
         .select("role, banned")
-        .eq("email", email)
-        .single();
+        .eq("email", cleanEmail)
+        .maybeSingle();
 
-      if (profileError || !userData) {
-        toast.error("Could not fetch user profile.");
-        return { success: false, error: "Profile not found." };
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+      }
+
+      // 🔹 If authenticated in Auth but profile missing from users table, auto-create profile
+      if (!userData) {
+        const userRole = data?.user?.user_metadata?.role || "recruiter";
+        const { data: insertedProfile, error: insertErr } = await supabase
+          .from("users")
+          .insert([
+            {
+              email: cleanEmail,
+              name: data?.user?.user_metadata?.name || cleanEmail.split("@")[0],
+              role: userRole,
+              picture: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+              credits: 3,
+              banned: false,
+            },
+          ])
+          .select("role, banned")
+          .maybeSingle();
+
+        if (insertErr && insertErr.code === "23505") {
+          const { data: refetched } = await supabase
+            .from("users")
+            .select("role, banned")
+            .eq("email", cleanEmail)
+            .maybeSingle();
+          userData = refetched;
+        } else if (insertedProfile) {
+          userData = insertedProfile;
+        }
+      }
+
+      // 🔹 Check role from metadata first, then database
+      const metaRole = data?.user?.user_metadata?.role;
+      let finalRole = (userData?.role || metaRole || "candidate").trim().toLowerCase();
+
+      // If user registered with metadata role that differs from DB row, sync DB
+      if (metaRole && metaRole.trim().toLowerCase() !== userData?.role?.trim().toLowerCase()) {
+        await supabase
+          .from("users")
+          .update({ role: metaRole })
+          .eq("email", cleanEmail);
+        finalRole = metaRole.trim().toLowerCase();
+        userData.role = metaRole;
       }
 
       if (userData.banned) {
@@ -80,14 +124,15 @@ export const AuthContextProvider = ({ children }) => {
       setUserProfile(userData);
       toast.success("Logged in!");
 
-      if (userData.role === "recruiter") {
+      if (finalRole === "recruiter") {
         window.location.href = "/recruiter/dashboard";
       } else {
         window.location.href = "/candidate/dashboard";
       }
 
       return { success: true, data };
-    } catch {
+    } catch (err) {
+      console.error("SignIn error:", err);
       return {
         success: false,
         error: "An unexpected error occurred. Please try again.",
@@ -98,9 +143,10 @@ export const AuthContextProvider = ({ children }) => {
   // 🔹 SIGN UP (Supabase-managed CAPTCHA — do NOT pass captchaToken)
   const signUpNewUser = async (email, password, { name, role }) => {
     try {
+      const cleanEmail = email.trim().toLowerCase();
       const { data: authData, error: authError } =
         await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
             data: {
@@ -119,7 +165,7 @@ export const AuthContextProvider = ({ children }) => {
 
       const { error: insertError } = await supabase.from("users").insert([
         {
-          email: email.toLowerCase(),
+          email: cleanEmail,
           name,
           role,
           picture:
@@ -130,7 +176,15 @@ export const AuthContextProvider = ({ children }) => {
       ]);
 
       if (insertError) {
-        return { success: false, error: insertError.message };
+        if (insertError.code === '23505') {
+          // If user row already exists, update role and name to selected role
+          await supabase
+            .from("users")
+            .update({ role, name })
+            .eq("email", cleanEmail);
+        } else {
+          return { success: false, error: insertError.message };
+        }
       }
 
       return { success: true, user: authData.user };

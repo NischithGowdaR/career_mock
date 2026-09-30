@@ -86,7 +86,7 @@ export default function AuthCallback() {
       setLoading(false);
 
       // ✅ CORRECT REDIRECTS (now without /main)
-      if (finalRole === 'recruiter') {
+      if (finalRole?.trim().toLowerCase() === 'recruiter') {
         router.push('/recruiter/dashboard');
       } else {
         router.push('/candidate/dashboard');
